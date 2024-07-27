@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  clerkId     String       @unique
+  name        String
+  enrollments Enrollment[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  creator   Creator[]
+
+  @@index([clerkId])
+}
+
+model Creator {
+  id          String   @id @default(uuid())
+  name        String
+  imageUrl    String?   @db.Text
+  linkedinUrl String?
+  bio         String?  @db.Text
+  about       String?  @db.Text
+  courses     Course[]
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Course {
+  id          String       @id @default(uuid())
+  title       String
+  thumbnail   String       @db.Text
+  price       Float
+  description String
+  published   Boolean
+  enrollments Enrollment[]
+  category    Category
+  // Add a chapter and video model
+  creatorId   String
+  creator     Creator      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([creatorId])
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([courseId, userId])
+}
+
+enum Category {
+  DEV_TECH             @map("Dev & Tech")
+  BUSINESS             @map("Business")
+  FINANCE              @map("Finance")
+  IT_SOFTWARE          @map("IT & Software")
+  OFFICE_PRODUCTIVITY  @map("Office Productivity")
+  PERSONAL_DEVELOPMENT @map("Personal Development")
+  DESIGN               @map("Design")
+  MARKETING            @map("Marketing")
+  HEALTH_FITNESS       @map("Health & Fitness")
+  MUSIC                @map("Music")
+}
